@@ -23,7 +23,7 @@ App Android (Kotlin + Jetpack Compose) de Rodrigo Cutiño para la EVA2 del curso
 
 | Hito | Estado |
 |---|---|
-| 0 | Proyecto creado y corriendo en el emulador (2026-11-16). Falta correrlo en un teléfono físico. |
+| 0 | **Terminado** (2026-11-16): proyecto creado, corre en el emulador y está en GitHub. No hay teléfono Android (solo iPhone); el docente autorizó usar el emulador. |
 | 1–8 | Pendientes |
 
 ## Convenciones

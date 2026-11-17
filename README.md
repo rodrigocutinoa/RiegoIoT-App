@@ -1,14 +1,108 @@
 # RiegoIoT-App
 
-App Android del sistema de riego IoT, para la Unidad 2 de **Aplicaciones Móviles para IoT (TI3042, INACAP)**.
+App Android para monitorear y controlar el riego desde el teléfono. Es la Unidad 2 de **Aplicaciones Móviles para IoT (TI3042, INACAP)**.
 
-- Kotlin y Jetpack Compose, minSdk 26.
-- Se conecta por MQTT a un nodo de riego simulado con [hertzbench](https://github.com/Rixmerz/hertzbench).
-- Proyecto de riego común (EVA1 y simulación): [ProyectRiego](https://github.com/rodrigocutinoa/ProyectRiego).
+**Estudiantes:** Jenniffer Gonzalez y Rodrigo Cutiño · Proyecto de la Unidad 1: [ProyectRiego](https://github.com/rodrigocutinoa/ProyectRiego)
 
-## Cómo ejecutar
+Una sola app con dos roles. El **Nodo de riego** simula el sensor de humedad del suelo, el de temperatura y la bomba. El **Panel** muestra el estado en vivo y controla la bomba. Se comunican por **Wi-Fi con MQTT**, y el lado IoT (broker, canal Wi-Fi y fallas) se simula con [hertzbench](https://github.com/Rixmerz/hertzbench), conectado a Claude Code por MCP.
 
-1. Abrir la carpeta en Android Studio y esperar el Gradle sync.
-2. Correr la app en un emulador o teléfono con Android 8.0 o superior.
+| Panel (operador) | Notificación de enlace | Nodo en modo seguro | Historial |
+|:-:|:-:|:-:|:-:|
+| ![Panel](docs/capturas/hito3-panel.png) | ![Notificación](docs/capturas/hito3-notificacion-enlace.png) | ![Nodo en SEGURO](docs/capturas/hito3-nodo-seguro.png) | ![Historial](docs/capturas/hito6-historial.png) |
 
-> En construcción: se completa hito a hito (problemática, medio inalámbrico, mockup, seguridad y pruebas).
+| Observador (sin control) | Bloqueo tras 5 fallos | Esperando confirmación | Historial: solo bomba |
+|:-:|:-:|:-:|:-:|
+| ![Observador](docs/capturas/hito5-observador.png) | ![Bloqueo](docs/capturas/hito5-bloqueo.png) | ![Esperando ACK](docs/capturas/punto4-esperando-ack.png) | ![Solo bomba](docs/capturas/hito6-historial-bomba.png) |
+
+## Qué hace
+
+| ID | Funcionalidad | Estado |
+|---|---|:-:|
+| F1 | El nodo publica la humedad del suelo y la temperatura cada 5 s. En AUTO enciende la bomba bajo el umbral y la apaga al llegar a umbral + 5 % | ✔ |
+| F2 | El panel muestra en vivo la humedad, la temperatura, la bomba, el modo, el umbral y si el nodo está en línea | ✔ |
+| F3 | El panel enciende o apaga la bomba, cambia el umbral y vuelve a AUTO; el nodo confirma con `ACK`. Si no llega la confirmación en 5 s, reenvía hasta 3 veces y avisa | ✔ |
+| F4 | **Notificación cada vez que el riego se enciende o se apaga**; también al perder el enlace y, en el nodo, al recibir un comando | ✔ |
+| F5 | Si se corta el enlace, el nodo apaga la bomba y pasa a `SEGURO`. El estado se publica retenido, así el panel ve el estado real al reconectar | ✔ |
+| F6 | Login con SQLite y PBKDF2; el primer usuario es **operador** y los siguientes, **observadores** (solo monitorean). Bloqueo de 30 s tras 5 fallos | ✔ |
+| F7 | Historial de lecturas y de encendidos y apagados de la bomba | ✔ |
+
+El diseño completo está en [docs/HITOS_1_2.md](docs/HITOS_1_2.md): problemática, herramientas, por qué se usa Wi-Fi con MQTT, mensajes, mockup y login.
+
+## Cómo ejecutar contra hertzbench
+
+### 1. Preparar el computador (macOS)
+
+```bash
+git clone https://github.com/rodrigocutinoa/ProyectRiego.git ~/Dev/Inacap/AppIoT/ProyectRiego
+git clone https://github.com/rodrigocutinoa/RiegoIoT-App.git ~/Dev/Inacap/AppIoT/RiegoIoT-App
+~/Dev/Inacap/AppIoT/ProyectRiego/hertzbench/preparar-mac.sh   # Deno, mosquitto, hertzbench y Android Studio
+```
+
+Después hay que abrir Android Studio una vez (asistente **Standard**) para que descargue el SDK y cree un emulador.
+
+### 2. Levantar la simulación
+
+Hay dos escenarios en `ProyectRiego/hertzbench/`. Los dos dejan el broker en el puerto 1883 del computador:
+
+| Escenario | Para qué |
+|---|---|
+| `riego-mqtt.yaml` | Broker más un **nodo de riego simulado**. Sirve para probar la app como **Panel** con un solo emulador |
+| `riego-broker.yaml` | Broker más un monitor suscrito a `riego/#`. Sirve para probar la app como **Nodo**, o con dos emuladores (Nodo y Panel) |
+
+**Desde Claude Code (MCP):** abrir Claude Code en `ProyectRiego`, aprobar el servidor `hertzbench` y pedir, por ejemplo, *«corre hertzbench/riego-mqtt.yaml»*. Con el MCP también se publican comandos (`mqtt_publish`), se corta el enlace (`inject_fault`) y se lee el tráfico (`get_serial`).
+
+**Desde la terminal:**
+
+```bash
+cd ~/Dev/Inacap/AppIoT/ProyectRiego
+hertzbench run hertzbench/riego-mqtt.yaml --out /tmp/riego-out
+# en otra terminal, para ver el tráfico:
+mosquitto_sub -h 127.0.0.1 -p 1883 -t 'riego/#' -v
+```
+
+### 3. Correr la app
+
+1. Abrir `RiegoIoT-App` en Android Studio y presionar **Run ▶** con el emulador elegido.
+2. Aceptar los permisos de **notificaciones** y de **dispositivos cercanos / red local**.
+3. **Crear cuenta.** La primera queda como operador.
+4. Elegir el rol **Panel** o **Nodo de riego**, con el broker `10.0.2.2` y el puerto `1883`, y presionar **Conectar**. Desde el emulador, `10.0.2.2` es el computador.
+
+Desde la terminal: `JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home" ./gradlew installDebug`.
+
+> **Android 17 (API 37):** la app necesita el permiso `ACCESS_LOCAL_NETWORK` para conectarse a `10.0.2.2`. Sin él, la conexión expira aunque el puente funcione. La app lo pide al abrirse.
+> **Teléfono físico:** hay que cambiar `listen: 127.0.0.1` por `listen: 0.0.0.0` en el escenario y conectar la app a la IP del computador en la misma red Wi-Fi.
+
+## Mensajes
+
+Cada mensaje es una línea `TIPO;clave;valor`. Todo lo que no calce con el formato o con los rangos permitidos se descarta.
+
+| Tópico | Ejemplo | Dirección |
+|---|---|---|
+| `riego/lectura` | `LECTURA;suelo;42` · `LECTURA;temp;24.5` | Nodo → Panel |
+| `riego/estado/<clave>` (retenido) | `ESTADO;bomba;ON` · `ESTADO;modo;SEGURO` · `ESTADO;umbral;35` | Nodo → Panel |
+| `riego/cmd` | `CMD;bomba;OFF` · `CMD;umbral;40` · `CMD;modo;AUTO` | Panel → Nodo |
+| `riego/ack` | `ACK;bomba;OFF` | Nodo → Panel |
+
+## Pruebas
+
+```bash
+JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home" ./gradlew testDebugUnitTest
+```
+
+Las pruebas unitarias cubren el formato y los rangos de los mensajes, los tópicos, PBKDF2 y el bloqueo del login. Las pruebas en el emulador contra hertzbench, con los comandos y los cortes de enlace hechos por MCP, están en la bitácora de [ProyectRiego/docs/EVA2_AVANCE.md](https://github.com/rodrigocutinoa/ProyectRiego/blob/main/docs/EVA2_AVANCE.md).
+
+## Estado
+
+| Hito | Estado |
+|---|---|
+| 0 | Proyecto Android (minSdk 26, Kotlin DSL) corriendo en el emulador |
+| 1 y 2 | Definición y diseño: [docs/HITOS_1_2.md](docs/HITOS_1_2.md) |
+| 3 | Conexión MQTT, roles Nodo y Panel, comandos y notificaciones |
+| 5 | Login con SQLite, PBKDF2 y roles |
+| 6 | Historial en SQLite |
+| 4 y 7 | Pendiente: cifrado de los mensajes, medidas ISO/IEC 27400 y OT, y tabla de pruebas P1–P14 |
+| 8 | Pendiente: demostración |
+
+## Herramientas
+
+Android Studio · Kotlin · Jetpack Compose y Material 3 · corrutinas · Eclipse Paho MQTT 1.2.5 · SQLite · `javax.crypto` (PBKDF2) · hertzbench (MCP) · emulador Android 17 arm64.

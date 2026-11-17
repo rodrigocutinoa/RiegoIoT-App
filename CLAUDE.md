@@ -30,7 +30,8 @@ App Android (Kotlin + Jetpack Compose) de Jenniffer Gonzalez y Rodrigo Cutiño p
 | 0 | **Terminado** (2026-11-16): proyecto creado, corre en el emulador y está en GitHub. No hay teléfono Android (solo iPhone); el docente autorizó usar el emulador. |
 | 1 y 2 | Borrador en [docs/HITOS_1_2.md](docs/HITOS_1_2.md) (2026-11-16). **Falta la revisión del docente** antes de programar. |
 | 3 | **Funciona** (2026-11-17): MQTT con Paho, roles Nodo y Panel, comandos con ACK, notificaciones de encendido y apagado, estado seguro al cortarse el enlace. Probado contra hertzbench en el emulador (ver bitácora). Falta la confirmación con reenvío y el estado retenido (punto 4). |
-| 4–8 | Pendientes |
+| 5 | **Funciona** (2026-11-17): login con SQLite y PBKDF2-SHA256 (120 000 iteraciones, sal de 16 bytes), primer usuario operador y los siguientes observadores, bloqueo de 30 s tras 5 fallos (sobrevive a la rotación), el observador no puede enviar comandos (se controla en la pantalla y en `Sesion`). Probado en el emulador; PBKDF2 tarda 10–15 s en el emulador cargado. |
+| 4, 6–8 | Pendientes |
 
 ## Pendientes que reportó el profesor (issue #1, 2026-11-17), en orden
 

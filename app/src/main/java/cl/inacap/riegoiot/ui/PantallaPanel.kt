@@ -33,6 +33,7 @@ fun PantallaPanel(modifier: Modifier, onSalir: () -> Unit) {
 
     Column(modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text("Panel de riego", style = MaterialTheme.typography.headlineSmall)
+        Text("Usuario: ${Sesion.usuario} (${Sesion.rol})", style = MaterialTheme.typography.bodyMedium)
         TextoEnlace(estado)
         Text(
             if (nodoEnLinea) "Nodo: en línea" else "Nodo: sin datos",

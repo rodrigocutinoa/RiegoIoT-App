@@ -19,7 +19,7 @@ object Sesion {
     const val HISTERESIS = 5 // la bomba se apaga al llegar a umbral + 5 % (igual que en la Unidad 1)
 
     var usuario: String? = null
-    var rol = "operador" // Hito 5: el login asignará operador u observador
+    var rol = "observador" // lo asigna el login (Hito 5): operador u observador
 
     var enlace: MqttEnlace? = null
         private set
@@ -173,8 +173,16 @@ object Sesion {
 
     // Lo llaman los botones del panel.
     fun enviarComando(clave: String, valor: String) {
+        // Control de acceso también aquí, no solo en la pantalla: el observador no envía comandos.
+        if (rol != "operador") return
         val e = enlace ?: return
         alcance.launch { e.enviar(Mensaje("CMD", clave, valor)) }
+    }
+
+    fun cerrarSesion() {
+        cerrar()
+        usuario = null
+        rol = "observador"
     }
 
     fun cerrar() {

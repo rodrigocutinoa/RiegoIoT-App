@@ -15,7 +15,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import cl.inacap.riegoiot.datos.BaseDatos
 import cl.inacap.riegoiot.ui.PantallaConexion
+import cl.inacap.riegoiot.ui.PantallaLogin
 import cl.inacap.riegoiot.ui.PantallaNodo
 import cl.inacap.riegoiot.ui.PantallaPanel
 import cl.inacap.riegoiot.ui.theme.RiegoIoTAppTheme
@@ -29,14 +31,23 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         Notificaciones.crearCanal(this)
         permisosNecesarios().takeIf { it.isNotEmpty() }?.let { pedirPermisos.launch(it) }
+        val db = BaseDatos(this)
         setContent {
             RiegoIoTAppTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { relleno ->
-                    // Hito 5 agrega la pantalla de login antes de «conexion».
-                    var pantalla by rememberSaveable { mutableStateOf("conexion") }
+                    var pantalla by rememberSaveable {
+                        mutableStateOf(if (Sesion.usuario == null) "login" else "conexion")
+                    }
                     val m = Modifier.padding(relleno)
+                    // Sin sesión iniciada no se entra a ninguna otra pantalla.
+                    if (Sesion.usuario == null && pantalla != "login") pantalla = "login"
                     when (pantalla) {
-                        "conexion" -> PantallaConexion(m) { rol -> pantalla = rol }
+                        "login" -> PantallaLogin(db, m) { pantalla = "conexion" }
+                        "conexion" -> PantallaConexion(
+                            m,
+                            onListo = { rol -> pantalla = rol },
+                            onCerrarSesion = { Sesion.cerrarSesion(); pantalla = "login" },
+                        )
                         "nodo" -> PantallaNodo(m) { pantalla = "conexion" }
                         "panel" -> PantallaPanel(m) { pantalla = "conexion" }
                     }

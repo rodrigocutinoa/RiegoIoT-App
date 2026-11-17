@@ -14,6 +14,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -39,7 +40,7 @@ private fun tienePermisoRedLocal(ctx: Context) =
 // Elige el rol (nodo o panel) y el broker MQTT. Desde el emulador, el puente de
 // hertzbench que corre en el computador está en 10.0.2.2:1883.
 @Composable
-fun PantallaConexion(modifier: Modifier, onListo: (rol: String) -> Unit) {
+fun PantallaConexion(modifier: Modifier, onListo: (rol: String) -> Unit, onCerrarSesion: () -> Unit) {
     val ctx = LocalContext.current
     val alcance = rememberCoroutineScope()
     var esNodo by rememberSaveable { mutableStateOf(false) }
@@ -74,6 +75,7 @@ fun PantallaConexion(modifier: Modifier, onListo: (rol: String) -> Unit) {
 
     Column(modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text("RiegoIoT", style = MaterialTheme.typography.headlineMedium)
+        Text("Usuario: ${Sesion.usuario} (${Sesion.rol})", style = MaterialTheme.typography.bodyMedium)
         Text("1. Rol de este teléfono")
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             FilterChip(selected = !esNodo, onClick = { esNodo = false }, label = { Text("Panel") })
@@ -92,6 +94,9 @@ fun PantallaConexion(modifier: Modifier, onListo: (rol: String) -> Unit) {
         error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         Button(onClick = ::iniciar, enabled = !conectando, modifier = Modifier.fillMaxWidth()) {
             Text(if (conectando) "Conectando…" else "Conectar")
+        }
+        OutlinedButton(onClick = onCerrarSesion, enabled = !conectando, modifier = Modifier.fillMaxWidth()) {
+            Text("Cerrar sesión")
         }
     }
 }

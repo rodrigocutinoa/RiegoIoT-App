@@ -28,6 +28,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import cl.inacap.riegoiot.Sesion
+import cl.inacap.riegoiot.datos.BaseDatos
 import cl.inacap.riegoiot.enlace.MqttEnlace
 import kotlinx.coroutines.launch
 
@@ -40,7 +41,7 @@ private fun tienePermisoRedLocal(ctx: Context) =
 // Elige el rol (nodo o panel) y el broker MQTT. Desde el emulador, el puente de
 // hertzbench que corre en el computador está en 10.0.2.2:1883.
 @Composable
-fun PantallaConexion(modifier: Modifier, onListo: (rol: String) -> Unit, onCerrarSesion: () -> Unit) {
+fun PantallaConexion(db: BaseDatos, modifier: Modifier, onListo: (rol: String) -> Unit, onCerrarSesion: () -> Unit) {
     val ctx = LocalContext.current
     val alcance = rememberCoroutineScope()
     var esNodo by rememberSaveable { mutableStateOf(false) }
@@ -63,7 +64,7 @@ fun PantallaConexion(modifier: Modifier, onListo: (rol: String) -> Unit, onCerra
         alcance.launch {
             val enlace = MqttEnlace(host.trim(), p!!, esNodo)
             if (enlace.conectar()) {
-                Sesion.iniciar(ctx, enlace, esNodo)
+                Sesion.iniciar(ctx, db, enlace, esNodo)
                 onListo(if (esNodo) "nodo" else "panel")
             } else {
                 error = "${enlace.estado.value}. ¿Está corriendo riego-mqtt.yaml en hertzbench?"

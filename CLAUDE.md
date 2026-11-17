@@ -31,7 +31,8 @@ App Android (Kotlin + Jetpack Compose) de Jenniffer Gonzalez y Rodrigo Cutiño p
 | 1 y 2 | Borrador en [docs/HITOS_1_2.md](docs/HITOS_1_2.md) (2026-11-16). **Falta la revisión del docente** antes de programar. |
 | 3 | **Funciona** (2026-11-17): MQTT con Paho, roles Nodo y Panel, comandos con ACK, notificaciones de encendido y apagado, estado seguro al cortarse el enlace. Probado contra hertzbench en el emulador (ver bitácora). Punto 4 completo (2026-11-17): confirmación con reenvío (5 s, hasta 3 reenvíos, aviso «Sin respuesta del nodo») y estado retenido en `riego/estado/<clave>`. |
 | 5 | **Funciona** (2026-11-17): login con SQLite y PBKDF2-SHA256 (120 000 iteraciones, sal de 16 bytes), primer usuario operador y los siguientes observadores, bloqueo de 30 s tras 5 fallos (sobrevive a la rotación), el observador no puede enviar comandos (se controla en la pantalla y en `Sesion`). Probado en el emulador; PBKDF2 tarda 10–15 s en el emulador cargado. |
-| 4, 6–8 | Pendientes |
+| 6 | **Funciona** (2026-11-17): el panel guarda cada lectura y cada cambio de la bomba en SQLite; historial con filtros «Todo» y «Solo bomba». Verificado que persiste con la app cerrada y que la contraseña no aparece en el archivo de la base. |
+| 4, 7, 8 | Pendientes (pruebas P1–P14, seguridad ISO/IEC 27400 y OT, demostración) y README con capturas |
 
 ## Pendientes que reportó el profesor (issue #1, 2026-11-17), en orden
 

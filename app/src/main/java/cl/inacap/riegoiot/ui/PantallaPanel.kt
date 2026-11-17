@@ -19,7 +19,7 @@ import cl.inacap.riegoiot.Sesion
 import java.util.Locale
 
 @Composable
-fun PantallaPanel(modifier: Modifier, onSalir: () -> Unit) {
+fun PantallaPanel(modifier: Modifier, onHistorial: () -> Unit, onSalir: () -> Unit) {
     val enlace = Sesion.enlace ?: run { LaunchedEffect(Unit) { onSalir() }; return }
     val estado by enlace.estado.collectAsState()
     val nodoEnLinea by Sesion.nodoEnLinea.collectAsState()
@@ -68,6 +68,7 @@ fun PantallaPanel(modifier: Modifier, onSalir: () -> Unit) {
             Text("Esperando confirmación del nodo: ${it.clave} → ${it.valor}…", color = MaterialTheme.colorScheme.tertiary)
         }
         if (!puedeControlar) Text("Tu rol es observador: puedes monitorear, pero no enviar comandos.")
+        OutlinedButton(onClick = onHistorial, modifier = Modifier.fillMaxWidth()) { Text("Ver historial") }
         OutlinedButton(onClick = { Sesion.cerrar(); onSalir() }, modifier = Modifier.fillMaxWidth()) {
             Text("Desconectar")
         }

@@ -17,6 +17,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import cl.inacap.riegoiot.datos.BaseDatos
 import cl.inacap.riegoiot.ui.PantallaConexion
+import cl.inacap.riegoiot.ui.PantallaHistorial
 import cl.inacap.riegoiot.ui.PantallaLogin
 import cl.inacap.riegoiot.ui.PantallaNodo
 import cl.inacap.riegoiot.ui.PantallaPanel
@@ -44,12 +45,17 @@ class MainActivity : ComponentActivity() {
                     when (pantalla) {
                         "login" -> PantallaLogin(db, m) { pantalla = "conexion" }
                         "conexion" -> PantallaConexion(
-                            m,
+                            db, m,
                             onListo = { rol -> pantalla = rol },
                             onCerrarSesion = { Sesion.cerrarSesion(); pantalla = "login" },
                         )
                         "nodo" -> PantallaNodo(m) { pantalla = "conexion" }
-                        "panel" -> PantallaPanel(m) { pantalla = "conexion" }
+                        "panel" -> PantallaPanel(
+                            m,
+                            onHistorial = { pantalla = "historial" },
+                            onSalir = { pantalla = "conexion" },
+                        )
+                        "historial" -> PantallaHistorial(db, m) { pantalla = "panel" }
                     }
                 }
             }

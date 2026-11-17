@@ -1,6 +1,7 @@
 package cl.inacap.riegoiot
 
 import android.content.Context
+import cl.inacap.riegoiot.datos.BaseDatos
 import cl.inacap.riegoiot.enlace.Mensaje
 import cl.inacap.riegoiot.enlace.MqttEnlace
 import kotlinx.coroutines.CoroutineScope
@@ -44,8 +45,11 @@ object Sesion {
     private val alcance = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var trabajo: Job? = null
 
-    fun iniciar(ctx: Context, nuevo: MqttEnlace, comoNodo: Boolean) {
+    private var db: BaseDatos? = null
+
+    fun iniciar(ctx: Context, baseDatos: BaseDatos, nuevo: MqttEnlace, comoNodo: Boolean) {
         cerrar()
+        db = baseDatos
         enlace = nuevo
         esNodo = comoNodo
         val app = ctx.applicationContext
@@ -169,6 +173,8 @@ object Sesion {
                 pendiente.value = null
             }
         }
+        // Hito 6: cada lectura queda en SQLite para el historial.
+        if (m.tipo == "LECTURA") db?.guardarLectura(m.clave, m.valor)
         when (m.clave) {
             "suelo" -> suelo.value = m.valor.toInt()
             "temp" -> temp.value = m.valor.toDouble()
@@ -180,6 +186,7 @@ object Sesion {
                 bomba.value = encendida
                 // Requisito del profesor: notificar cada vez que el riego se enciende o se apaga.
                 if (m.tipo == "ESTADO" && anterior != null && anterior != encendida) {
+                    db?.guardarLectura("bomba", m.valor) // el historial también guarda cada cambio
                     val detalle = suelo.value?.let { "Suelo al $it %" } ?: ""
                     Notificaciones.mostrar(app, if (encendida) "Riego encendido" else "Riego apagado", detalle)
                 }

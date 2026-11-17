@@ -18,6 +18,10 @@ App Android (Kotlin + Jetpack Compose) de Jenniffer Gonzalez y Rodrigo Cutiño p
 - Tópicos y mensajes: ver «Decisiones de diseño» y `docs/HITOS_1_2.md`, sección 2.2.
 - Compilar desde la terminal: `JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home" ./gradlew installDebug`.
 - Emulador: `Medium_Phone_API_37.0` (Android 17, arm64).
+- **Android 17 exige `ACCESS_LOCAL_NETWORK`** para conectarse a IPs privadas como `10.0.2.2`; sin él, la conexión expira (SocketTimeoutException) aunque `adb shell nc` funcione.
+- Escenarios: `../ProyectRiego/hertzbench/riego-mqtt.yaml` (nodo simulado, para probar el Panel) y `riego-broker.yaml` (solo broker + monitor suscrito a `riego/#`, para probar la app como Nodo o dos emuladores).
+- Pruebas con dos emuladores a la vez dejan al Mac sin memoria (`-read-only`, se cuelga `adb`); se probó un rol a la vez y el otro lado desde el MCP (`mqtt_publish`, `get_serial` del monitor).
+- No usar `uiautomator dump` (se cuelga); tocar por coordenadas a partir de capturas.
 
 ## Estado
 
@@ -25,7 +29,7 @@ App Android (Kotlin + Jetpack Compose) de Jenniffer Gonzalez y Rodrigo Cutiño p
 |---|---|
 | 0 | **Terminado** (2026-11-16): proyecto creado, corre en el emulador y está en GitHub. No hay teléfono Android (solo iPhone); el docente autorizó usar el emulador. |
 | 1 y 2 | Borrador en [docs/HITOS_1_2.md](docs/HITOS_1_2.md) (2026-11-16). **Falta la revisión del docente** antes de programar. |
-| 3 | En curso (2026-11-17) |
+| 3 | **Funciona** (2026-11-17): MQTT con Paho, roles Nodo y Panel, comandos con ACK, notificaciones de encendido y apagado, estado seguro al cortarse el enlace. Probado contra hertzbench en el emulador (ver bitácora). Falta la confirmación con reenvío y el estado retenido (punto 4). |
 | 4–8 | Pendientes |
 
 ## Pendientes que reportó el profesor (issue #1, 2026-11-17), en orden

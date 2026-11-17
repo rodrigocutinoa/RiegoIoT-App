@@ -70,6 +70,7 @@ Cada mensaje es una línea de texto con tres partes separadas por punto y coma, 
 | `riego/lectura` | `LECTURA;temp;24.5` | Nodo → Panel | Temperatura del aire en °C (punto decimal) |
 | `riego/estado` | `ESTADO;bomba;ON` · `ESTADO;bomba;OFF` | Nodo → Panel | La bomba cambió de estado: **genera la notificación del panel** |
 | `riego/estado` | `ESTADO;modo;AUTO` · `MANUAL` · `SEGURO` | Nodo → Panel | Modo de operación del nodo |
+| `riego/estado` | `ESTADO;umbral;35` | Nodo → Panel | Umbral vigente (se agregó en el Hito 3, para que el panel lo muestre al conectarse) |
 | `riego/estado` | `ESTADO;enlace;CAIDO` | Broker → Panel | *Last Will* del nodo: se perdió el enlace |
 | `riego/cmd` | `CMD;bomba;ON` · `CMD;bomba;OFF` | Panel → Nodo | Encender o apagar la bomba (pasa a modo MANUAL) |
 | `riego/cmd` | `CMD;modo;AUTO` | Panel → Nodo | Volver al modo automático |

@@ -20,17 +20,22 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import cl.inacap.riegoiot.Sesion
 import cl.inacap.riegoiot.datos.BaseDatos
 import cl.inacap.riegoiot.enlace.MqttEnlace
+import cl.inacap.riegoiot.seguridad.Cripto
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 // Android 17 pide un permiso para conectarse a direcciones de la red local.
 private fun tienePermisoRedLocal(ctx: Context) =
@@ -47,6 +52,7 @@ fun PantallaConexion(db: BaseDatos, modifier: Modifier, onListo: (rol: String) -
     var esNodo by rememberSaveable { mutableStateOf(false) }
     var host by rememberSaveable { mutableStateOf("10.0.2.2") }
     var puerto by rememberSaveable { mutableStateOf("1883") }
+    var codigo by remember { mutableStateOf("") } // no se guarda al rotar
     var error by rememberSaveable { mutableStateOf<String?>(null) }
     var conectando by rememberSaveable { mutableStateOf(false) }
 
@@ -55,6 +61,7 @@ fun PantallaConexion(db: BaseDatos, modifier: Modifier, onListo: (rol: String) -
         error = when {
             host.isBlank() -> "Escribe la dirección del broker."
             p == null || p !in 1..65535 -> "El puerto debe ser un número entre 1 y 65535."
+            !codigo.matches(Regex("\\d{6}")) -> "El código de vinculación debe tener 6 dígitos (el mismo en el nodo y el panel)."
             !tienePermisoRedLocal(ctx) ->
                 "Falta el permiso de dispositivos cercanos / red local (Ajustes → Apps → RiegoIoT → Permisos)."
             else -> null
@@ -62,7 +69,9 @@ fun PantallaConexion(db: BaseDatos, modifier: Modifier, onListo: (rol: String) -
         if (error != null) return
         conectando = true
         alcance.launch {
-            val enlace = MqttEnlace(host.trim(), p!!, esNodo)
+            // PBKDF2 tarda a propósito: la clave se deriva fuera del hilo de la interfaz.
+            val clave = withContext(Dispatchers.Default) { Cripto.claveDesdeCodigo(codigo) }
+            val enlace = MqttEnlace(host.trim(), p!!, esNodo, clave)
             if (enlace.conectar()) {
                 Sesion.iniciar(ctx, db, enlace, esNodo)
                 onListo(if (esNodo) "nodo" else "panel")
@@ -91,6 +100,13 @@ fun PantallaConexion(db: BaseDatos, modifier: Modifier, onListo: (rol: String) -
             puerto, { puerto = it.filter(Char::isDigit) }, label = { Text("Puerto") }, singleLine = true,
             modifier = Modifier.fillMaxWidth(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        )
+        Text("3. Código de vinculación")
+        OutlinedTextField(
+            codigo, { codigo = it.filter(Char::isDigit).take(6) }, label = { Text("6 dígitos, igual en nodo y panel") },
+            singleLine = true, modifier = Modifier.fillMaxWidth(),
+            visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
         )
         error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         Button(onClick = ::iniciar, enabled = !conectando, modifier = Modifier.fillMaxWidth()) {

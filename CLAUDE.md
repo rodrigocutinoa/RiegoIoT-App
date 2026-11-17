@@ -32,7 +32,8 @@ App Android (Kotlin + Jetpack Compose) de Jenniffer Gonzalez y Rodrigo Cutiño p
 | 3 | **Funciona** (2026-11-17): MQTT con Paho, roles Nodo y Panel, comandos con ACK, notificaciones de encendido y apagado, estado seguro al cortarse el enlace. Probado contra hertzbench en el emulador (ver bitácora). Punto 4 completo (2026-11-17): confirmación con reenvío (5 s, hasta 3 reenvíos, aviso «Sin respuesta del nodo») y estado retenido en `riego/estado/<clave>`. |
 | 5 | **Funciona** (2026-11-17): login con SQLite y PBKDF2-SHA256 (120 000 iteraciones, sal de 16 bytes), primer usuario operador y los siguientes observadores, bloqueo de 30 s tras 5 fallos (sobrevive a la rotación), el observador no puede enviar comandos (se controla en la pantalla y en `Sesion`). Probado en el emulador; PBKDF2 tarda 10–15 s en el emulador cargado. |
 | 6 | **Funciona** (2026-11-17): el panel guarda cada lectura y cada cambio de la bomba en SQLite; historial con filtros «Todo» y «Solo bomba». Verificado que persiste con la app cerrada y que la contraseña no aparece en el archivo de la base. |
-| 4, 7, 8 | Pendientes (pruebas P1–P14, seguridad ISO/IEC 27400 y OT, demostración) y README con capturas |
+| 4 | **Funciona** (2026-11-17): AES-GCM con código de vinculación (PBKDF2, sal fija `RiegoIoT-v1`), tópico como AAD, hora en el mensaje y comandos de más de 30 s rechazados; contador de mensajes rechazados. Probado en el Panel: datos cifrados del nodo simulado OK y 2 mensajes en texto plano rechazados. Falta probar en el emulador el rechazo de comandos viejos (cubierto solo por el diseño). `../ProyectRiego/hertzbench/cifrar.ts` cifra igual que la app. |
+| 7, 8 | Por consultar con el profesor (2026-11-17): seguridad ISO/IEC 27400 y OT, pruebas P1–P14, demostración. README con capturas: listo. |
 
 ## Pendientes que reportó el profesor (issue #1, 2026-11-17), en orden
 

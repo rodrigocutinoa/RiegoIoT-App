@@ -10,9 +10,9 @@ Una sola app con dos roles. El **Nodo de riego** simula el sensor de humedad del
 |:-:|:-:|:-:|:-:|
 | ![Panel](docs/capturas/hito3-panel.png) | ![Notificación](docs/capturas/hito3-notificacion-enlace.png) | ![Nodo en SEGURO](docs/capturas/hito3-nodo-seguro.png) | ![Historial](docs/capturas/hito6-historial.png) |
 
-| Observador (sin control) | Bloqueo tras 5 fallos | Esperando confirmación | Historial: solo bomba |
+| Observador (sin control) | Bloqueo tras 5 fallos | Esperando confirmación | Mensajes sin cifrar rechazados |
 |:-:|:-:|:-:|:-:|
-| ![Observador](docs/capturas/hito5-observador.png) | ![Bloqueo](docs/capturas/hito5-bloqueo.png) | ![Esperando ACK](docs/capturas/punto4-esperando-ack.png) | ![Solo bomba](docs/capturas/hito6-historial-bomba.png) |
+| ![Observador](docs/capturas/hito5-observador.png) | ![Bloqueo](docs/capturas/hito5-bloqueo.png) | ![Esperando ACK](docs/capturas/punto4-esperando-ack.png) | ![Rechazados](docs/capturas/hito4-rechazados.png) |
 
 ## Qué hace
 
@@ -25,6 +25,7 @@ Una sola app con dos roles. El **Nodo de riego** simula el sensor de humedad del
 | F5 | Si se corta el enlace, el nodo apaga la bomba y pasa a `SEGURO`. El estado se publica retenido, así el panel ve el estado real al reconectar | ✔ |
 | F6 | Login con SQLite y PBKDF2; el primer usuario es **operador** y los siguientes, **observadores** (solo monitorean). Bloqueo de 30 s tras 5 fallos | ✔ |
 | F7 | Historial de lecturas y de encendidos y apagados de la bomba | ✔ |
+| Seguridad | Mensajes cifrados con AES-GCM y un código de vinculación de 6 dígitos (igual en el nodo y el panel). Se rechazan los mensajes sin cifrar, con otro código, alterados o movidos de tópico, y los comandos de más de 30 s | ✔ |
 
 El diseño completo está en [docs/HITOS_1_2.md](docs/HITOS_1_2.md): problemática, herramientas, por qué se usa Wi-Fi con MQTT, mensajes, mockup y login.
 
@@ -65,7 +66,7 @@ mosquitto_sub -h 127.0.0.1 -p 1883 -t 'riego/#' -v
 1. Abrir `RiegoIoT-App` en Android Studio y presionar **Run ▶** con el emulador elegido.
 2. Aceptar los permisos de **notificaciones** y de **dispositivos cercanos / red local**.
 3. **Crear cuenta.** La primera queda como operador.
-4. Elegir el rol **Panel** o **Nodo de riego**, con el broker `10.0.2.2` y el puerto `1883`, y presionar **Conectar**. Desde el emulador, `10.0.2.2` es el computador.
+4. Elegir el rol **Panel** o **Nodo de riego**, con el broker `10.0.2.2`, el puerto `1883` y el **código de vinculación `123456`**, y presionar **Conectar**. Desde el emulador, `10.0.2.2` es el computador. El nodo simulado de `riego-mqtt.yaml` usa ese código.
 
 Desde la terminal: `JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home" ./gradlew installDebug`.
 
@@ -75,6 +76,10 @@ Desde la terminal: `JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Con
 ## Mensajes
 
 Cada mensaje es una línea `TIPO;clave;valor`. Todo lo que no calce con el formato o con los rangos permitidos se descarta.
+
+**En el aire viaja cifrado:** `Base64(iv + AES-GCM("<hora en ms>|TIPO;clave;valor"))`. La clave AES-256 sale del código de vinculación con PBKDF2, y el tópico va como dato autenticado. Para publicar un mensaje cifrado desde hertzbench (`mqtt_publish`) se usa `deno run ProyectRiego/hertzbench/cifrar.ts 123456 riego/cmd "CMD;bomba;ON"`.
+
+**Límite declarado:** el código de 6 dígitos con sal fija sirve para la demostración, pero no para producción, donde se usaría ECDH o el Android Keystore. La ventana de 30 s reduce la repetición de comandos, pero no la elimina.
 
 | Tópico | Ejemplo | Dirección |
 |---|---|---|
@@ -89,7 +94,7 @@ Cada mensaje es una línea `TIPO;clave;valor`. Todo lo que no calce con el forma
 JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home" ./gradlew testDebugUnitTest
 ```
 
-Las pruebas unitarias cubren el formato y los rangos de los mensajes, los tópicos, PBKDF2 y el bloqueo del login. Las pruebas en el emulador contra hertzbench, con los comandos y los cortes de enlace hechos por MCP, están en la bitácora de [ProyectRiego/docs/EVA2_AVANCE.md](https://github.com/rodrigocutinoa/ProyectRiego/blob/main/docs/EVA2_AVANCE.md).
+Las 13 pruebas unitarias cubren el formato y los rangos de los mensajes, los tópicos, PBKDF2, el bloqueo del login y el cifrado AES-GCM: ida y vuelta, otro código, otro tópico, mensaje alterado, texto sin cifrar y compatibilidad con `cifrar.ts`. Las pruebas en el emulador contra hertzbench, con los comandos y los cortes de enlace hechos por MCP, están en la bitácora de [ProyectRiego/docs/EVA2_AVANCE.md](https://github.com/rodrigocutinoa/ProyectRiego/blob/main/docs/EVA2_AVANCE.md).
 
 ## Estado
 
@@ -100,9 +105,10 @@ Las pruebas unitarias cubren el formato y los rangos de los mensajes, los tópic
 | 3 | Conexión MQTT, roles Nodo y Panel, comandos y notificaciones |
 | 5 | Login con SQLite, PBKDF2 y roles |
 | 6 | Historial en SQLite |
-| 4 y 7 | Pendiente: cifrado de los mensajes, medidas ISO/IEC 27400 y OT, y tabla de pruebas P1–P14 |
+| 4 | Cifrado AES-GCM de los mensajes con código de vinculación |
+| 7 | Por consultar con el profesor: medidas ISO/IEC 27400 y OT, y tabla de pruebas P1–P14 |
 | 8 | Pendiente: demostración |
 
 ## Herramientas
 
-Android Studio · Kotlin · Jetpack Compose y Material 3 · corrutinas · Eclipse Paho MQTT 1.2.5 · SQLite · `javax.crypto` (PBKDF2) · hertzbench (MCP) · emulador Android 17 arm64.
+Android Studio · Kotlin · Jetpack Compose y Material 3 · corrutinas · Eclipse Paho MQTT 1.2.5 · SQLite · `javax.crypto` (PBKDF2 y AES-GCM) · hertzbench (MCP) · emulador Android 17 arm64.

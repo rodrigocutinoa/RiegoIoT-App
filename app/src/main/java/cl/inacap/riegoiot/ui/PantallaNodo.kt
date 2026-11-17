@@ -27,10 +27,15 @@ fun PantallaNodo(modifier: Modifier, onSalir: () -> Unit) {
     val bomba by Sesion.bomba.collectAsState()
     val modo by Sesion.modo.collectAsState()
     val umbral by Sesion.umbral.collectAsState()
+    val rechazados by enlace.rechazados.collectAsState()
 
     Column(modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text("Nodo de riego (simulado)", style = MaterialTheme.typography.headlineSmall)
         TextoEnlace(estado)
+        if (rechazados > 0) Text(
+            "Comandos rechazados: $rechazados (sin cifrar, otro código, alterados o viejos)",
+            color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall,
+        )
         Text("Humedad del suelo: ${suelo ?: "—"} %")
         Slider(
             value = (suelo ?: 50).toFloat(), onValueChange = { Sesion.cambiarSuelo(it.toInt()) },

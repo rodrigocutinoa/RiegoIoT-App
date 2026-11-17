@@ -29,6 +29,7 @@ fun PantallaPanel(modifier: Modifier, onHistorial: () -> Unit, onSalir: () -> Un
     val modo by Sesion.modo.collectAsState()
     val umbral by Sesion.umbral.collectAsState()
     val pendiente by Sesion.pendiente.collectAsState()
+    val rechazados by enlace.rechazados.collectAsState()
     val puedeControlar = Sesion.rol == "operador" // control de acceso por rol (Hito 5)
     val habilitado = puedeControlar && estado == "Conectado" && nodoEnLinea && pendiente == null
 
@@ -36,6 +37,10 @@ fun PantallaPanel(modifier: Modifier, onHistorial: () -> Unit, onSalir: () -> Un
         Text("Panel de riego", style = MaterialTheme.typography.headlineSmall)
         Text("Usuario: ${Sesion.usuario} (${Sesion.rol})", style = MaterialTheme.typography.bodyMedium)
         TextoEnlace(estado)
+        if (rechazados > 0) Text(
+            "Mensajes rechazados: $rechazados (sin cifrar, otro código o alterados)",
+            color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall,
+        )
         Text(
             if (nodoEnLinea) "Nodo: en línea" else "Nodo: sin datos",
             color = if (nodoEnLinea) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,

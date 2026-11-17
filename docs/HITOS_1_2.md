@@ -1,7 +1,7 @@
 # RiegoIoT-App: definición y diseño (Hitos 1 y 2)
 
 **Aplicaciones Móviles para IoT (TI3042, INACAP) · Unidad 2**
-Estudiante: Rodrigo Cutiño · Proyecto de la Unidad 1: [ProyectRiego](https://github.com/rodrigocutinoa/ProyectRiego)
+Estudiantes: Jenniffer Gonzalez y Rodrigo Cutiño · Proyecto de la Unidad 1: [ProyectRiego](https://github.com/rodrigocutinoa/ProyectRiego)
 
 ---
 

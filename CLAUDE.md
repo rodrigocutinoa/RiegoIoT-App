@@ -1,6 +1,6 @@
 # RiegoIoT-App – contexto para Claude Code
 
-App Android (Kotlin + Jetpack Compose) de Rodrigo Cutiño para la EVA2 del curso Aplicaciones Móviles para IoT (TI3042, INACAP). La evaluación es individual: este repo es solo de Rodrigo.
+App Android (Kotlin + Jetpack Compose) de Jenniffer Gonzalez y Rodrigo Cutiño para la EVA2 del curso Aplicaciones Móviles para IoT (TI3042, INACAP). **La EVA2 es en pareja** (confirmado por Rodrigo el 2026-11-17, aunque la guía dice individual); este es el repo de los dos.
 
 - Repo común del proyecto de riego (EVA1, escenarios de hertzbench, bitácora): `../ProyectRiego`. **Antes de seguir, lee `../ProyectRiego/docs/RETOMAR.md` y `../ProyectRiego/docs/EVA2_AVANCE.md`.**
 - La guía del profesor está en `../ProyectRiego/_Document/` (no se sube a ningún repo).
@@ -25,7 +25,20 @@ App Android (Kotlin + Jetpack Compose) de Rodrigo Cutiño para la EVA2 del curso
 |---|---|
 | 0 | **Terminado** (2026-11-16): proyecto creado, corre en el emulador y está en GitHub. No hay teléfono Android (solo iPhone); el docente autorizó usar el emulador. |
 | 1 y 2 | Borrador en [docs/HITOS_1_2.md](docs/HITOS_1_2.md) (2026-11-16). **Falta la revisión del docente** antes de programar. |
-| 3–8 | Pendientes |
+| 3 | En curso (2026-11-17) |
+| 4–8 | Pendientes |
+
+## Pendientes que reportó el profesor (issue #1, 2026-11-17), en orden
+
+1. Hito 3: permisos (`INTERNET`, `POST_NOTIFICATIONS`), conexión MQTT al puente de hertzbench, humedad, temperatura, bomba y modo en vivo, y comandos.
+2. Notificación cuando la bomba se enciende o se apaga (requisito mínimo).
+3. Login con usuario y contraseña, roles operador y observador (Hito 5, requisito mínimo).
+4. Modo seguro al cortarse el enlace (F5).
+5. Historial de lecturas (Hito 6).
+6. Seguridad y pruebas (Hito 7) y demostración (Hito 8).
+7. README con cómo correr la app contra hertzbench, con capturas.
+
+Además: la entrega del AAI quedó en borrador (Rodrigo debe presionar «Enviar tarea»); aclarar con el profesor que es en pareja y si espera un ESP32 emulado (en macOS no corre, issue #54 de hertzbench). Cuando el Hito 3 funcione: subir commits, enviar la tarea y mandar el reporte con la app que pidió en el #110.
 
 ## Decisiones de diseño (2026-11-16)
 

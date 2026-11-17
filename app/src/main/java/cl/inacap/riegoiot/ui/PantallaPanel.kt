@@ -28,8 +28,9 @@ fun PantallaPanel(modifier: Modifier, onSalir: () -> Unit) {
     val bomba by Sesion.bomba.collectAsState()
     val modo by Sesion.modo.collectAsState()
     val umbral by Sesion.umbral.collectAsState()
+    val pendiente by Sesion.pendiente.collectAsState()
     val puedeControlar = Sesion.rol == "operador" // control de acceso por rol (Hito 5)
-    val habilitado = puedeControlar && estado == "Conectado" && nodoEnLinea
+    val habilitado = puedeControlar && estado == "Conectado" && nodoEnLinea && pendiente == null
 
     Column(modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text("Panel de riego", style = MaterialTheme.typography.headlineSmall)
@@ -62,6 +63,9 @@ fun PantallaPanel(modifier: Modifier, onSalir: () -> Unit) {
                 enabled = habilitado && modo != "AUTO",
                 onClick = { Sesion.enviarComando("modo", "AUTO") },
             ) { Text("AUTO") }
+        }
+        pendiente?.let {
+            Text("Esperando confirmación del nodo: ${it.clave} → ${it.valor}…", color = MaterialTheme.colorScheme.tertiary)
         }
         if (!puedeControlar) Text("Tu rol es observador: puedes monitorear, pero no enviar comandos.")
         OutlinedButton(onClick = { Sesion.cerrar(); onSalir() }, modifier = Modifier.fillMaxWidth()) {

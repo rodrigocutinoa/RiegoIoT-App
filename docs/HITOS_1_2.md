@@ -68,10 +68,10 @@ Cada mensaje es una línea de texto con tres partes separadas por punto y coma, 
 |---|---|---|---|
 | `riego/lectura` | `LECTURA;suelo;42` | Nodo → Panel | Humedad del suelo en % |
 | `riego/lectura` | `LECTURA;temp;24.5` | Nodo → Panel | Temperatura del aire en °C (punto decimal) |
-| `riego/estado` | `ESTADO;bomba;ON` · `ESTADO;bomba;OFF` | Nodo → Panel | La bomba cambió de estado: **genera la notificación del panel** |
-| `riego/estado` | `ESTADO;modo;AUTO` · `MANUAL` · `SEGURO` | Nodo → Panel | Modo de operación del nodo |
-| `riego/estado` | `ESTADO;umbral;35` | Nodo → Panel | Umbral vigente (se agregó en el Hito 3, para que el panel lo muestre al conectarse) |
-| `riego/estado` | `ESTADO;enlace;CAIDO` | Broker → Panel | *Last Will* del nodo: se perdió el enlace |
+| `riego/estado/bomba` | `ESTADO;bomba;ON` · `ESTADO;bomba;OFF` | Nodo → Panel | La bomba cambió de estado: **genera la notificación del panel** |
+| `riego/estado/modo` | `ESTADO;modo;AUTO` · `MANUAL` · `SEGURO` | Nodo → Panel | Modo de operación del nodo |
+| `riego/estado/umbral` | `ESTADO;umbral;35` | Nodo → Panel | Umbral vigente (se agregó en el Hito 3, para que el panel lo muestre al conectarse) |
+| `riego/estado/enlace` | `ESTADO;enlace;CAIDO` | Broker → Panel | *Last Will* del nodo: se perdió el enlace |
 | `riego/cmd` | `CMD;bomba;ON` · `CMD;bomba;OFF` | Panel → Nodo | Encender o apagar la bomba (pasa a modo MANUAL) |
 | `riego/cmd` | `CMD;modo;AUTO` | Panel → Nodo | Volver al modo automático |
 | `riego/cmd` | `CMD;umbral;35` | Panel → Nodo | Nuevo umbral de humedad, entre 10 y 90 % |
@@ -82,7 +82,7 @@ Cualquier línea que no calce con este formato, o con un valor fuera de rango, s
 **Reglas para que ningún comando se pierda en silencio** (salen de la prueba de la sección 2.4):
 
 - **Confirmación obligatoria:** después de enviar un `CMD`, el panel muestra el botón como **pendiente** hasta recibir el `ACK`. Si no llega en 5 segundos, reenvía el comando hasta 3 veces y después avisa «Sin respuesta del nodo».
-- **Estado retenido:** el nodo publica `riego/estado` con *retain*. El broker guarda el último estado y se lo entrega al panel apenas se conecta o se reconecta, así que el panel nunca muestra un estado viejo.
+- **Estado retenido:** el nodo publica el estado con *retain*, en un tópico por clave (`riego/estado/bomba`, `riego/estado/modo`, `riego/estado/umbral`), porque el broker guarda un mensaje retenido por tópico. El broker guarda el último estado y se lo entrega al panel apenas se conecta o se reconecta, así que el panel nunca muestra un estado viejo.
 - **Estado seguro en el nodo:** si el nodo pierde el enlace, apaga la bomba y pasa a `SEGURO` por sí mismo. Al reconectar publica `ESTADO;modo;SEGURO` y `ESTADO;bomba;OFF`, y solo sale de `SEGURO` con un comando nuevo del operador.
 
 ### 2.3 Mockup de pantallas

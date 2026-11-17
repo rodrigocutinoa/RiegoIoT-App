@@ -2,6 +2,8 @@ package cl.inacap.riegoiot
 
 import cl.inacap.riegoiot.enlace.Mensaje
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Assert.assertNull
 import org.junit.Test
 
@@ -34,9 +36,18 @@ class MensajeTest {
     @Test
     fun cadaTipoVaEnSuTopico() {
         assertEquals("riego/lectura", Mensaje("LECTURA", "suelo", "42").topico)
-        assertEquals("riego/estado", Mensaje("ESTADO", "bomba", "ON").topico)
+        assertEquals("riego/estado/bomba", Mensaje("ESTADO", "bomba", "ON").topico)
+        assertEquals("riego/estado/modo", Mensaje("ESTADO", "modo", "AUTO").topico)
         assertEquals("riego/cmd", Mensaje("CMD", "bomba", "ON").topico)
         assertEquals("riego/ack", Mensaje("ACK", "bomba", "ON").topico)
         assertEquals("ESTADO;bomba;ON", Mensaje("ESTADO", "bomba", "ON").aLinea())
+    }
+
+    @Test
+    fun soloElEstadoSeRetiene() {
+        assertTrue(Mensaje("ESTADO", "bomba", "ON").retenido)
+        assertFalse(Mensaje("ESTADO", "enlace", "CAIDO").retenido) // el Last Will no
+        assertFalse(Mensaje("LECTURA", "suelo", "42").retenido)
+        assertFalse(Mensaje("CMD", "bomba", "ON").retenido)
     }
 }

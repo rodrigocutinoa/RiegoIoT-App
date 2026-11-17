@@ -29,7 +29,7 @@ App Android (Kotlin + Jetpack Compose) de Jenniffer Gonzalez y Rodrigo Cutiño p
 |---|---|
 | 0 | **Terminado** (2026-11-16): proyecto creado, corre en el emulador y está en GitHub. No hay teléfono Android (solo iPhone); el docente autorizó usar el emulador. |
 | 1 y 2 | Borrador en [docs/HITOS_1_2.md](docs/HITOS_1_2.md) (2026-11-16). **Falta la revisión del docente** antes de programar. |
-| 3 | **Funciona** (2026-11-17): MQTT con Paho, roles Nodo y Panel, comandos con ACK, notificaciones de encendido y apagado, estado seguro al cortarse el enlace. Probado contra hertzbench en el emulador (ver bitácora). Falta la confirmación con reenvío y el estado retenido (punto 4). |
+| 3 | **Funciona** (2026-11-17): MQTT con Paho, roles Nodo y Panel, comandos con ACK, notificaciones de encendido y apagado, estado seguro al cortarse el enlace. Probado contra hertzbench en el emulador (ver bitácora). Punto 4 completo (2026-11-17): confirmación con reenvío (5 s, hasta 3 reenvíos, aviso «Sin respuesta del nodo») y estado retenido en `riego/estado/<clave>`. |
 | 5 | **Funciona** (2026-11-17): login con SQLite y PBKDF2-SHA256 (120 000 iteraciones, sal de 16 bytes), primer usuario operador y los siguientes observadores, bloqueo de 30 s tras 5 fallos (sobrevive a la rotación), el observador no puede enviar comandos (se controla en la pantalla y en `Sesion`). Probado en el emulador; PBKDF2 tarda 10–15 s en el emulador cargado. |
 | 4, 6–8 | Pendientes |
 
@@ -49,7 +49,7 @@ Además: la entrega del AAI quedó en borrador (Rodrigo debe presionar «Enviar 
 
 - Cliente MQTT: **Eclipse Paho** (`org.eclipse.paho.client.mqttv3`), justificado en el Hito 1.
 - **Una sola app con dos roles** (Nodo y Panel), como la guía; se prueba con dos emuladores. hertzbench simula el broker, el canal y las fallas.
-- Mensajes `TIPO;clave;valor` por tópico: `riego/lectura`, `riego/estado` (con *retain*), `riego/cmd`, `riego/ack`; *Last Will* `ESTADO;enlace;CAIDO`. Tabla completa en el Hito 2.
+- Mensajes `TIPO;clave;valor` por tópico: `riego/lectura`, `riego/estado/<clave>` (con *retain*, un tópico por clave porque el broker retiene uno por tópico), `riego/cmd`, `riego/ack`; *Last Will* `ESTADO;enlace;CAIDO` en `riego/estado/enlace`. Tabla completa en el Hito 2.
 - Ningún comando se pierde en silencio: el panel espera el `ACK` (reenvía a los 5 s, hasta 3 veces) y el nodo pasa solo a `SEGURO` al perder el enlace. Sale de la prueba con `inject_fault` (QoS 0 pierde el comando enviado durante un corte).
 
 ## Convenciones

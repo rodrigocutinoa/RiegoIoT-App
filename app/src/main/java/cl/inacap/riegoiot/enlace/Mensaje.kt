@@ -2,15 +2,20 @@ package cl.inacap.riegoiot.enlace
 
 // Una línea de texto por mensaje: TIPO;CLAVE;VALOR (Hito 2, sección 2.2).
 //   LECTURA;suelo;42 · LECTURA;temp;24.5      nodo → panel   (riego/lectura)
-//   ESTADO;bomba;ON  · ESTADO;modo;AUTO       nodo → panel   (riego/estado)
+//   ESTADO;bomba;ON  · ESTADO;modo;AUTO       nodo → panel   (riego/estado/<clave>, retenido)
 //   CMD;bomba;OFF    · CMD;umbral;35          panel → nodo   (riego/cmd)
 //   ACK;bomba;OFF                             nodo → panel   (riego/ack)
 data class Mensaje(val tipo: String, val clave: String, val valor: String) {
 
     fun aLinea() = "$tipo;$clave;$valor"
 
-    // Cada tipo de mensaje viaja en su propio tópico MQTT.
-    val topico: String get() = TOPICOS.getValue(tipo)
+    // Cada tipo de mensaje viaja en su propio tópico MQTT. El estado usa un tópico por clave
+    // (riego/estado/bomba, riego/estado/modo...) porque el broker retiene un mensaje por tópico:
+    // así un panel que se conecta recibe al tiro el último valor de cada uno.
+    val topico: String get() = if (tipo == "ESTADO") "riego/estado/$clave" else TOPICOS.getValue(tipo)
+
+    // El estado se publica retenido; el Last Will (enlace) no, para no dejar un aviso viejo.
+    val retenido: Boolean get() = tipo == "ESTADO" && clave != "enlace"
 
     companion object {
         val TOPICOS = mapOf(

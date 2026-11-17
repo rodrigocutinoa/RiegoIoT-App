@@ -37,7 +37,7 @@ class MqttEnlace(
 
     // El nodo escucha comandos; el panel escucha lecturas, estado y confirmaciones.
     private val suscripciones =
-        if (esNodo) arrayOf("riego/cmd") else arrayOf("riego/lectura", "riego/estado", "riego/ack")
+        if (esNodo) arrayOf("riego/cmd") else arrayOf("riego/lectura", "riego/estado/#", "riego/ack")
 
     init {
         cliente.setCallback(object : MqttCallbackExtended {
@@ -74,7 +74,7 @@ class MqttEnlace(
             keepAliveInterval = 5 // detecta un corte en ~10 s
             if (esNodo) {
                 // Last Will: si el nodo se cae sin despedirse, el broker avisa al panel.
-                setWill("riego/estado", "ESTADO;enlace;CAIDO".toByteArray(), 0, false)
+                setWill("riego/estado/enlace", "ESTADO;enlace;CAIDO".toByteArray(), 0, false)
             }
         }
         try {
@@ -93,7 +93,7 @@ class MqttEnlace(
     suspend fun enviar(m: Mensaje) = withContext(Dispatchers.IO) {
         if (!cliente.isConnected) return@withContext false
         try {
-            cliente.publish(m.topico, m.aLinea().toByteArray(Charsets.UTF_8), 0, false)
+            cliente.publish(m.topico, m.aLinea().toByteArray(Charsets.UTF_8), 0, m.retenido)
             true
         } catch (e: MqttException) {
             false

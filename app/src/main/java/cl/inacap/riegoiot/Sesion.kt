@@ -17,6 +17,8 @@ import java.util.Locale
 // pierde al rotar el teléfono ni al cambiar de pantalla.
 object Sesion {
     const val HISTERESIS = 5 // la bomba se apaga al llegar a umbral + 5 % (igual que en la Unidad 1)
+    const val ESPERA_ACK_MS = 5_000L // cuánto espera el panel la confirmación de un comando
+    const val MAX_REENVIOS = 3 // reenvíos antes de avisar «Sin respuesta del nodo»
 
     var usuario: String? = null
     var rol = "observador" // lo asigna el login (Hito 5): operador u observador
@@ -34,6 +36,11 @@ object Sesion {
     val umbral = MutableStateFlow<Int?>(null)
     val nodoEnLinea = MutableStateFlow(false) // solo panel: ¿el nodo está publicando?
 
+    // Solo panel: comando enviado que todavía no confirma el nodo con su ACK.
+    val pendiente = MutableStateFlow<Mensaje?>(null)
+    private var reintentos: Job? = null
+    private var appCtx: Context? = null
+
     private val alcance = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var trabajo: Job? = null
 
@@ -42,6 +49,7 @@ object Sesion {
         enlace = nuevo
         esNodo = comoNodo
         val app = ctx.applicationContext
+        appCtx = app
         if (comoNodo) {
             suelo.value = 50; temp.value = 22.0; bomba.value = false; modo.value = "AUTO"; umbral.value = 35
         }
@@ -152,7 +160,15 @@ object Sesion {
             Notificaciones.mostrar(app, "Nodo desconectado", "El nodo de riego perdió el enlace")
             return
         }
-        nodoEnLinea.value = true
+        // Solo las lecturas y las confirmaciones prueban que el nodo está vivo ahora: el estado
+        // puede ser un mensaje retenido que el broker guardó de antes.
+        if (m.tipo == "LECTURA" || m.tipo == "ACK") nodoEnLinea.value = true
+        if (m.tipo == "ACK") pendiente.value?.let { p ->
+            if (p.clave == m.clave && p.valor == m.valor) { // el nodo confirmó este comando
+                reintentos?.cancel()
+                pendiente.value = null
+            }
+        }
         when (m.clave) {
             "suelo" -> suelo.value = m.valor.toInt()
             "temp" -> temp.value = m.valor.toDouble()
@@ -171,12 +187,26 @@ object Sesion {
         }
     }
 
-    // Lo llaman los botones del panel.
+    // Lo llaman los botones del panel. Ningún comando se pierde en silencio (Hito 2, sección 2.2):
+    // si el ACK no llega en 5 s se reenvía, hasta 3 veces, y después se avisa.
     fun enviarComando(clave: String, valor: String) {
         // Control de acceso también aquí, no solo en la pantalla: el observador no envía comandos.
         if (rol != "operador") return
+        if (pendiente.value != null) return // un comando a la vez
         val e = enlace ?: return
-        alcance.launch { e.enviar(Mensaje("CMD", clave, valor)) }
+        val m = Mensaje("CMD", clave, valor)
+        pendiente.value = m
+        reintentos = alcance.launch {
+            repeat(1 + MAX_REENVIOS) {
+                e.enviar(m)
+                delay(ESPERA_ACK_MS)
+                if (pendiente.value != m) return@launch // llegó el ACK
+            }
+            pendiente.value = null
+            appCtx?.let {
+                Notificaciones.mostrar(it, "Sin respuesta del nodo", "No se confirmó: $clave → $valor")
+            }
+        }
     }
 
     fun cerrarSesion() {
@@ -186,6 +216,9 @@ object Sesion {
     }
 
     fun cerrar() {
+        reintentos?.cancel()
+        reintentos = null
+        pendiente.value = null
         trabajo?.cancel()
         trabajo = null
         enlace?.cerrar()

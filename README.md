@@ -88,6 +88,33 @@ Cada mensaje es una línea `TIPO;clave;valor`. Todo lo que no calce con el forma
 | `riego/cmd` | `CMD;bomba;OFF` · `CMD;umbral;40` · `CMD;modo;AUTO` | Panel → Nodo |
 | `riego/ack` | `ACK;bomba;OFF` | Nodo → Panel |
 
+## Seguridad: ISO/IEC 27400 y lineamientos OT (Hito 7)
+
+La ISO/IEC 27400:2022 da lineamientos de seguridad y privacidad para soluciones IoT: identificar y autenticar, controlar el acceso, proteger los datos guardados y en tránsito, y resistir las fallas. En la industria OT, la familia IEC 62443 agrega el mínimo privilegio y que un equipo quede en un estado seguro cuando algo falla.
+
+| Medida | Qué hace | Dónde | Punto que cumple |
+|---|---|---|---|
+| PBKDF2-SHA256 con sal de 16 bytes y 120 000 iteraciones | La contraseña nunca se guarda, solo la sal y el hash; adivinarla es lento | [`Cripto.hash`](app/src/main/java/cl/inacap/riegoiot/seguridad/Cripto.kt), [`BaseDatos`](app/src/main/java/cl/inacap/riegoiot/datos/BaseDatos.kt) | Cifrado de credenciales |
+| Comparación en tiempo constante | `MessageDigest.isEqual` no revela cuántos bytes coinciden | [`Cripto.verificar`](app/src/main/java/cl/inacap/riegoiot/seguridad/Cripto.kt) | Cifrado de credenciales |
+| Contraseña de al menos 8 caracteres | Rechaza contraseñas cortas al registrarse | [`PantallaLogin`](app/src/main/java/cl/inacap/riegoiot/ui/PantallaLogin.kt) | Autenticación |
+| Bloqueo de 30 s tras 5 intentos fallidos | Frena los ataques de fuerza bruta | [`Bloqueo`](app/src/main/java/cl/inacap/riegoiot/seguridad/Bloqueo.kt), [`PantallaLogin`](app/src/main/java/cl/inacap/riegoiot/ui/PantallaLogin.kt) | Control de acceso |
+| Roles operador y observador | Solo el operador envía comandos (mínimo privilegio) | [`BaseDatos`](app/src/main/java/cl/inacap/riegoiot/datos/BaseDatos.kt), [`PantallaPanel`](app/src/main/java/cl/inacap/riegoiot/ui/PantallaPanel.kt) | Control de acceso · OT (IEC 62443) |
+| AES-256-GCM en cada mensaje, con el tópico como dato autenticado | Sin el código de vinculación nadie lee ni altera lo que viaja, ni mueve un mensaje a otro tópico | [`Cripto.cifrar`](app/src/main/java/cl/inacap/riegoiot/seguridad/Cripto.kt), [`MqttEnlace`](app/src/main/java/cl/inacap/riegoiot/enlace/MqttEnlace.kt) | Cifrado de datos sensibles · conexión segura |
+| Comandos con hora, rechazados después de 30 s | Un comando grabado no sirve para repetirlo más tarde | [`MqttEnlace.abrir`](app/src/main/java/cl/inacap/riegoiot/enlace/MqttEnlace.kt) | Conexión segura |
+| El nodo también valida al emisor | El nodo solo acepta comandos cifrados con su código, así que no basta con llegar al broker | [`MqttEnlace.abrir`](app/src/main/java/cl/inacap/riegoiot/enlace/MqttEnlace.kt) | Autenticación |
+| Validación de mensajes | Se descarta lo que no sea `LECTURA`, `ESTADO`, `CMD` o `ACK` con una clave y un rango permitidos | [`Mensaje.desdeLinea`](app/src/main/java/cl/inacap/riegoiot/enlace/Mensaje.kt) | Protección de datos |
+| Consultas con parámetros (`?`) | Evita la inyección SQL | [`BaseDatos`](app/src/main/java/cl/inacap/riegoiot/datos/BaseDatos.kt) | Protección de datos |
+| `allowBackup="false"` | La base de datos no sale del teléfono en los respaldos | [Manifiesto](app/src/main/AndroidManifest.xml) | Protección de datos |
+| `usesCleartextTraffic="false"` | Android bloquea HTTP sin TLS | [Manifiesto](app/src/main/AndroidManifest.xml) | Conexión segura |
+| Permisos mínimos, en tiempo de ejecución | Solo Internet, red local y notificaciones; sin ubicación ni escaneo. Si se niegan, la app sigue funcionando | [Manifiesto](app/src/main/AndroidManifest.xml), [`MainActivity`](app/src/main/java/cl/inacap/riegoiot/MainActivity.kt) | Permisos adecuados |
+| Estado seguro ante la pérdida del enlace | El nodo apaga la bomba, pasa a `SEGURO` y avisa en los dos lados | [`Sesion`](app/src/main/java/cl/inacap/riegoiot/Sesion.kt) | Lineamiento OT (IEC 62443) |
+| Confirmación con reenvío y estado retenido | Un comando sin `ACK` se reenvía hasta 3 veces y después se avisa; el panel siempre ve el estado real | [`Sesion`](app/src/main/java/cl/inacap/riegoiot/Sesion.kt) | Lineamiento OT (resiliencia) |
+
+**Límites declarados:**
+- Un código de 6 dígitos con sal fija sirve para la demostración, pero no para producción. Ahí se usaría un intercambio de claves (ECDH) o claves guardadas en el Android Keystore.
+- La conexión con el broker es MQTT sin TLS (puerto 1883). El contenido va cifrado con AES-GCM, pero los tópicos y los metadatos se ven. En producción se usaría MQTT sobre TLS (8883) con usuario y contraseña en el broker.
+- La ventana de 30 s reduce la repetición de comandos, pero no la elimina. Un contador por mensaje la cerraría del todo.
+
 ## Pruebas
 
 ```bash
@@ -106,7 +133,7 @@ Las 13 pruebas unitarias cubren el formato y los rangos de los mensajes, los tó
 | 5 | Login con SQLite, PBKDF2 y roles |
 | 6 | Historial en SQLite |
 | 4 | Cifrado AES-GCM de los mensajes con código de vinculación |
-| 7 | Por consultar con el profesor: medidas ISO/IEC 27400 y OT, y tabla de pruebas P1–P14 |
+| 7 | En curso: medidas ISO/IEC 27400 y OT listas; falta la tabla de pruebas P1–P14 con capturas |
 | 8 | Pendiente: demostración |
 
 ## Herramientas

@@ -117,11 +117,40 @@ La ISO/IEC 27400:2022 da lineamientos de seguridad y privacidad para soluciones 
 
 ## Pruebas
 
+### Pruebas de funcionamiento P1–P14 (Hitos 4 y 7)
+
+Se hicieron el 2026-11-18 en el emulador (Android 17, arm64), contra hertzbench controlado desde Claude Code por MCP. La guía usa dos teléfonos con Bluetooth y un ventilador; aquí el medio es Wi-Fi con MQTT y el actuador es la bomba. El lado que no corre en el emulador lo hace el nodo simulado (`riego-mqtt.yaml`) o se publica desde el MCP con `mqtt_publish`, con mensajes cifrados generados por `ProyectRiego/hertzbench/cifrar.ts`.
+
+**Resultado: 14 de 14 pasan.**
+
+| ID | Caso | Pasos (adaptados a MQTT y a la bomba) | Esperado | Resultado (2026-11-18) | Captura |
+|---|---|---|---|---|:-:|
+| P1 | Conexión | Panel con el código `123456`, contra el nodo simulado de `riego-mqtt.yaml` | «Conectado» y el nodo en línea | ✔ «Enlace: Conectado» y «Nodo: en línea» | [<img src="docs/capturas/p01-conexion.png" width="110">](docs/capturas/p01-conexion.png) |
+| P2 | Monitoreo | Publicar una lectura cifrada `LECTURA;suelo;25` desde el MCP (equivale a mover el sensor a 25) | El panel la muestra en 2 s o menos | ✔ «Suelo 25 %» en menos de 2 s | [<img src="docs/capturas/p02-monitoreo.png" width="110">](docs/capturas/p02-monitoreo.png) |
+| P3 | Alerta | El nodo enciende o apaga la bomba; después llegan tres `ESTADO;bomba;ON` seguidos | Una notificación por cambio, sin repetir | ✔ «Riego apagado · Suelo al 61 %»; tres ON seguidos generan una sola notificación | [<img src="docs/capturas/p03-alerta.png" width="110">](docs/capturas/p03-alerta.png) |
+| P4 | Control | Nodo de la app recibe `CMD;bomba;ON` cifrado (enviado por MCP, en el papel del panel) | El nodo muestra ENCENDIDA, recibe una notificación y confirma | ✔ «Bomba: ENCENDIDA» (MANUAL), «Comando recibido · bomba → ON» y `ACK` cifrado a los 0,45 s. La confirmación en el panel: [captura del punto 4](docs/capturas/punto4-esperando-ack.png) | [<img src="docs/capturas/p04-control.png" width="110">](docs/capturas/p04-control.png) |
+| P5 | Código distinto | Panel con `111111` y nodo simulado con `123456` | Se conectan, pero no pasa ningún dato | ✔ Conectado, «Mensajes rechazados: 9», «Nodo: sin datos» y botones deshabilitados | [<img src="docs/capturas/p05-codigo-distinto.png" width="110">](docs/capturas/p05-codigo-distinto.png) |
+| P6 | Pérdida de enlace | Nodo con la bomba encendida; `inject_fault` con 100 % de pérdida | Aviso «Enlace perdido»; la bomba queda APAGADA | ✔ «Reconectando…», «Bomba: APAGADA», modo SEGURO y aviso «Enlace perdido · Bomba apagada por seguridad» | [<img src="docs/capturas/p06-perdida-enlace.png" width="110">](docs/capturas/p06-perdida-enlace.png) |
+| P7 | Permiso negado | Negar el permiso de red local (`ACCESS_LOCAL_NETWORK`) e intentar conectar | Mensaje claro; la app no se cierra | ✔ «Falta el permiso de dispositivos cercanos / red local (Ajustes → Apps → RiegoIoT → Permisos)»; la app sigue abierta | [<img src="docs/capturas/p07-permiso-negado.png" width="110">](docs/capturas/p07-permiso-negado.png) |
+| P8 | Registro y roles | Crear `rodrigo` y luego `jenniffer` | El primero operador, el segundo observador | ✔ «rodrigo (operador)» y «jenniffer (observador)» | [<img src="docs/capturas/p08a-operador.png" width="110">](docs/capturas/p08a-operador.png) |
+| P9 | Login incorrecto | Contraseña equivocada 5 veces y un sexto intento | Mensaje de error; bloqueo de 30 s | ✔ «Usuario o contraseña incorrectos» y luego «Demasiados intentos. Espera 11 segundos», sin verificar la contraseña | [<img src="docs/capturas/p09b-bloqueo.png" width="110">](docs/capturas/p09b-bloqueo.png) |
+| P10 | Contraseña corta | Registrar con 5 caracteres | Se rechaza (mínimo 8) | ✔ «La contraseña debe tener al menos 8 caracteres» | [<img src="docs/capturas/p10-contrasena-corta.png" width="110">](docs/capturas/p10-contrasena-corta.png) |
+| P11 | Control de acceso | Entrar como observadora y abrir el panel | Ve los datos; el control está deshabilitado | ✔ Ve suelo, aire y bomba; botones deshabilitados y «Tu rol es observador…» | [<img src="docs/capturas/p11-control-acceso.png" width="110">](docs/capturas/p11-control-acceso.png) |
+| P12 | Almacenamiento | Conectar 1 minuto y abrir el historial | Lecturas con su hora | ✔ 21 registros en 55 s, con hora. Son menos que las ~30 de la guía porque el nodo publica cada 5 s, no cada 2 s | [<img src="docs/capturas/p12-almacenamiento.png" width="110">](docs/capturas/p12-almacenamiento.png) |
+| P13 | Persistencia | Cerrar la app del todo (`force-stop`), abrirla y entrar | El historial sigue ahí | ✔ Siguen los eventos de las 20:41 y 20:42, anteriores al cierre | [<img src="docs/capturas/p13-persistencia.png" width="110">](docs/capturas/p13-persistencia.png) |
+| P14 | Credenciales protegidas | Copiar la base con `adb` y revisar la tabla `usuarios` con `sqlite3` | Solo la sal y el hash (BLOB) | ✔ Sal BLOB de 16 bytes y hash BLOB de 32 bytes; la contraseña no aparece en el archivo | [<img src="docs/capturas/p14-credenciales.png" width="110">](docs/capturas/p14-credenciales.png) |
+
+P8 también tiene la captura de la observadora: [p08b-observador.png](docs/capturas/p08b-observador.png). P9, la del primer error: [p09a-login-incorrecto.png](docs/capturas/p09a-login-incorrecto.png).
+
+**Prueba extra: repetición de un comando grabado.** El mismo `CMD;bomba;ON` cifrado de P4, publicado otra vez más de 30 s después, **se rechaza**: «Comandos rechazados: 1» y la bomba sigue APAGADA ([captura](docs/capturas/p-extra-repeticion.png)).
+
+### Pruebas unitarias
+
 ```bash
 JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home" ./gradlew testDebugUnitTest
 ```
 
-Las 13 pruebas unitarias cubren el formato y los rangos de los mensajes, los tópicos, PBKDF2, el bloqueo del login y el cifrado AES-GCM: ida y vuelta, otro código, otro tópico, mensaje alterado, texto sin cifrar y compatibilidad con `cifrar.ts`. Las pruebas en el emulador contra hertzbench, con los comandos y los cortes de enlace hechos por MCP, están en la bitácora de [ProyectRiego/docs/EVA2_AVANCE.md](https://github.com/rodrigocutinoa/ProyectRiego/blob/main/docs/EVA2_AVANCE.md).
+Las 13 pruebas unitarias cubren el formato y los rangos de los mensajes, los tópicos, PBKDF2, el bloqueo del login y el cifrado AES-GCM: ida y vuelta, otro código, otro tópico, mensaje alterado, texto sin cifrar y compatibilidad con `cifrar.ts`. El detalle de cada sesión de pruebas está en la bitácora de [ProyectRiego/docs/EVA2_AVANCE.md](https://github.com/rodrigocutinoa/ProyectRiego/blob/main/docs/EVA2_AVANCE.md).
 
 ## Estado
 
@@ -133,7 +162,7 @@ Las 13 pruebas unitarias cubren el formato y los rangos de los mensajes, los tó
 | 5 | Login con SQLite, PBKDF2 y roles |
 | 6 | Historial en SQLite |
 | 4 | Cifrado AES-GCM de los mensajes con código de vinculación |
-| 7 | En curso: medidas ISO/IEC 27400 y OT listas; falta la tabla de pruebas P1–P14 con capturas |
+| 7 | Medidas ISO/IEC 27400 y OT, y pruebas P1–P14 con capturas: 14 de 14 pasan |
 | 8 | Pendiente: demostración |
 
 ## Herramientas

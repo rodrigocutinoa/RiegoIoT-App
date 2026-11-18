@@ -33,7 +33,8 @@ App Android (Kotlin + Jetpack Compose) de Jenniffer Gonzalez y Rodrigo Cutiño p
 | 5 | **Funciona** (2026-11-17): login con SQLite y PBKDF2-SHA256 (120 000 iteraciones, sal de 16 bytes), primer usuario operador y los siguientes observadores, bloqueo de 30 s tras 5 fallos (sobrevive a la rotación), el observador no puede enviar comandos (se controla en la pantalla y en `Sesion`). Probado en el emulador; PBKDF2 tarda 10–15 s en el emulador cargado. |
 | 6 | **Funciona** (2026-11-17): el panel guarda cada lectura y cada cambio de la bomba en SQLite; historial con filtros «Todo» y «Solo bomba». Verificado que persiste con la app cerrada y que la contraseña no aparece en el archivo de la base. |
 | 4 | **Funciona** (2026-11-17): AES-GCM con código de vinculación (PBKDF2, sal fija `RiegoIoT-v1`), tópico como AAD, hora en el mensaje y comandos de más de 30 s rechazados; contador de mensajes rechazados. Probado en el Panel: datos cifrados del nodo simulado OK y 2 mensajes en texto plano rechazados. Falta probar en el emulador el rechazo de comandos viejos (cubierto solo por el diseño). `../ProyectRiego/hertzbench/cifrar.ts` cifra igual que la app. |
-| 7, 8 | Por consultar con el profesor (2026-11-17): seguridad ISO/IEC 27400 y OT, pruebas P1–P14, demostración. README con capturas: listo. |
+| 7 | **En curso** (2026-11-18): el profesor confirmó que falta el Hito 7. Tabla de medidas ISO/IEC 27400 y OT en el README ([65bffe3](https://github.com/rodrigocutinoa/RiegoIoT-App/commit/65bffe3)) y `usesCleartextTraffic="false"`. **Falta:** pruebas P1–P14 en el emulador con una captura cada una (`docs/capturas/pNN-*.png`) y su tabla en el README. Adaptación a MQTT y bomba: P2 sensor desde el nodo simulado; P3 notificación al encenderse la bomba en AUTO; P5 panel con `111111` contra el nodo `123456`; P6 corte con `inject_fault`; P7 negar el permiso de notificaciones; P14 tabla `usuarios` (Database Inspector, captura de Rodrigo, o `sqlite3` por `adb`). Guía: páginas 25 y 30–31. |
+| 8 | Pendiente: guion de la demostración (guía, página 32). |
 
 ## Pendientes que reportó el profesor (issue #1, 2026-11-17), en orden
 
@@ -42,7 +43,7 @@ App Android (Kotlin + Jetpack Compose) de Jenniffer Gonzalez y Rodrigo Cutiño p
 3. Login con usuario y contraseña, roles operador y observador (Hito 5, requisito mínimo).
 4. Modo seguro al cortarse el enlace (F5).
 5. Historial de lecturas (Hito 6).
-6. Seguridad y pruebas (Hito 7) y demostración (Hito 8).
+6. Seguridad y pruebas (Hito 7, en curso: faltan P1–P14) y demostración (Hito 8).
 7. README con cómo correr la app contra hertzbench, con capturas.
 
 Además: la entrega del AAI quedó en borrador (Rodrigo debe presionar «Enviar tarea»); aclarar con el profesor que es en pareja y si espera un ESP32 emulado (en macOS no corre, issue #54 de hertzbench). Cuando el Hito 3 funcione: subir commits, enviar la tarea y mandar el reporte con la app que pidió en el #110.

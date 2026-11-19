@@ -14,6 +14,10 @@ Una sola app con dos roles. El **Nodo de riego** simula el sensor de humedad del
 |:-:|:-:|:-:|:-:|
 | ![Observador](docs/capturas/hito5-observador.png) | ![Bloqueo](docs/capturas/hito5-bloqueo.png) | ![Esperando ACK](docs/capturas/punto4-esperando-ack.png) | ![Rechazados](docs/capturas/hito4-rechazados.png) |
 
+## Problemática
+
+En un huerto o invernadero, regar con horario fijo desperdicia agua cuando el suelo ya está húmedo, y deja secar las plantas cuando hace calor. En la Unidad 1 hicimos un nodo ESP32 que mide la humedad del suelo y enciende una bomba bajo un umbral, por Wi-Fi con MQTT. Faltaba que la persona a cargo pudiera **ver el estado del riego desde el teléfono, enterarse en el momento en que la bomba se enciende o se apaga, y controlarla a distancia**, sin que cualquiera pudiera hacerlo. Esta app cubre esa necesidad ([detalle](docs/HITOS_1_2.md#11-problemática)).
+
 ## Qué hace
 
 | ID | Funcionalidad | Estado |
@@ -28,6 +32,46 @@ Una sola app con dos roles. El **Nodo de riego** simula el sensor de humedad del
 | Seguridad | Mensajes cifrados con AES-GCM y un código de vinculación de 6 dígitos (igual en el nodo y el panel). Se rechazan los mensajes sin cifrar, con otro código, alterados o movidos de tópico, y los comandos de más de 30 s | ✔ |
 
 El diseño completo está en [docs/HITOS_1_2.md](docs/HITOS_1_2.md): problemática, herramientas, por qué se usa Wi-Fi con MQTT, mensajes, mockup y login.
+
+## Herramientas y por qué
+
+| Herramienta | Por qué |
+|---|---|
+| Android Studio y Kotlin | El IDE y el lenguaje que Google recomienda para Android |
+| Jetpack Compose y Material 3 | Interfaz declarativa que sigue las guías de diseño de Android |
+| Corrutinas | La red y el cálculo de PBKDF2 no bloquean la interfaz |
+| Eclipse Paho MQTT 1.2.5 | Cliente MQTT 3.1.1 de referencia, pequeño, con reconexión automática y *Last Will* |
+| SQLite | Incluido en Android; funciona sin Internet en el terreno |
+| `javax.crypto` | PBKDF2 para las contraseñas y AES-GCM para los mensajes, sin librerías extra |
+| hertzbench (MCP) | Simula el broker, el canal Wi-Fi y las fallas; lo pidió el profesor |
+
+## Medio inalámbrico: Wi-Fi con MQTT
+
+| Criterio | En este proyecto |
+|---|---|
+| Distancia | El huerto está a más de 10 m del lugar donde se mira el panel: Bluetooth no alcanza |
+| Energía | El nodo ya tiene corriente para la bomba, así que el bajo consumo de Bluetooth no aporta |
+| Estabilidad | Hay router propio; MQTT se reconecta solo y avisa la caída con *Last Will* |
+
+MQTT además desacopla los equipos: ninguno necesita la IP del otro, y el ESP32 de la Unidad 1 ya habla MQTT. Se descartó Bluetooth también porque el puente BLE de hertzbench solo funciona en Linux ([detalle](docs/HITOS_1_2.md#21-medio-inalámbrico-wi-fi-con-mqtt)).
+
+## Autenticación y almacenamiento
+
+**SQLite local**, porque la app opera en el terreno sin Internet garantizado, con pocos usuarios por equipo y sin necesidad de sincronizar entre sedes:
+- **Contraseñas:** se guarda una sal aleatoria de 16 bytes y un hash **PBKDF2-SHA256** con 120 000 iteraciones; la contraseña nunca se guarda.
+- **Roles:** el primer usuario es **operador** y los siguientes, **observadores**.
+- **Bloqueo:** 30 s después de 5 intentos fallidos.
+- **Historial:** en la misma base se guardan las lecturas y los eventos de la bomba.
+
+Si más adelante hubiera que compartir usuarios entre equipos, se migraría a Firebase Authentication ([detalle](docs/HITOS_1_2.md#25-login-y-autenticación-sumativa)).
+
+## Mockup
+
+El mockup de las pantallas (Login, Conexión, Nodo, Panel, Historial y la notificación) y la navegación entre ellas están en [docs/HITOS_1_2.md, sección 2.3](docs/HITOS_1_2.md#23-mockup-de-pantallas). Las pantallas reales están en las capturas de arriba y en la tabla de pruebas.
+
+## Demostración
+
+El guion de 5 a 7 minutos, con dos emuladores (Panel y Nodo), está en **[docs/DEMO.md](docs/DEMO.md)**. `scripts/demo-emuladores.sh` deja listos los dos "teléfonos".
 
 ## Cómo ejecutar contra hertzbench
 
@@ -159,12 +203,12 @@ Las 13 pruebas unitarias cubren el formato y los rangos de los mensajes, los tó
 | 0 | Proyecto Android (minSdk 26, Kotlin DSL) corriendo en el emulador |
 | 1 y 2 | Definición y diseño: [docs/HITOS_1_2.md](docs/HITOS_1_2.md) |
 | 3 | Conexión MQTT, roles Nodo y Panel, comandos y notificaciones |
+| 4 | Cifrado AES-GCM de los mensajes con código de vinculación |
 | 5 | Login con SQLite, PBKDF2 y roles |
 | 6 | Historial en SQLite |
-| 4 | Cifrado AES-GCM de los mensajes con código de vinculación |
 | 7 | Medidas ISO/IEC 27400 y OT, y pruebas P1–P14 con capturas: 14 de 14 pasan |
-| 8 | Pendiente: demostración |
+| 8 | Guion de la demostración ensayado con dos emuladores: [docs/DEMO.md](docs/DEMO.md) |
 
-## Herramientas
+## Resumen de herramientas
 
 Android Studio · Kotlin · Jetpack Compose y Material 3 · corrutinas · Eclipse Paho MQTT 1.2.5 · SQLite · `javax.crypto` (PBKDF2 y AES-GCM) · hertzbench (MCP) · emulador Android 17 arm64.

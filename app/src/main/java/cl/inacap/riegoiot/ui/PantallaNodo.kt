@@ -39,11 +39,13 @@ fun PantallaNodo(modifier: Modifier, onSalir: () -> Unit) {
         Text("Humedad del suelo: ${suelo ?: "—"} %")
         Slider(
             value = (suelo ?: 50).toFloat(), onValueChange = { Sesion.cambiarSuelo(it.toInt()) },
+            onValueChangeFinished = { Sesion.sueloSoltado() },
             valueRange = 0f..100f,
         )
         Text("Temperatura del aire: " + (temp?.let { String.format(Locale.US, "%.1f °C", it) } ?: "—"))
         Slider(
             value = (temp ?: 22.0).toFloat(), onValueChange = { Sesion.cambiarTemp(it.toDouble()) },
+            onValueChangeFinished = { Sesion.tempSoltada() },
             valueRange = 0f..45f,
         )
         TextoBomba(bomba)

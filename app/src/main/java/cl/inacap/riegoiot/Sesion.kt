@@ -107,7 +107,24 @@ object Sesion {
     // Lo llama la pantalla del nodo al mover el deslizador de humedad.
     fun cambiarSuelo(valor: Int) {
         suelo.value = valor
-        if (modo.value == "AUTO") evaluarAuto()
+    }
+
+    // Al soltar el deslizador: publica la lectura al tiro y, después, aplica el modo AUTO.
+    // En ese orden, el panel ya tiene la humedad nueva cuando le llega el cambio de la bomba
+    // (y la muestra en la notificación).
+    fun sueloSoltado() {
+        val e = enlace ?: return
+        alcance.launch {
+            suelo.value?.let { e.enviar(Mensaje("LECTURA", "suelo", it.toString())) }
+            if (modo.value == "AUTO") evaluarAuto()
+        }
+    }
+
+    fun tempSoltada() {
+        val e = enlace ?: return
+        alcance.launch {
+            temp.value?.let { e.enviar(Mensaje("LECTURA", "temp", String.format(Locale.US, "%.1f", it))) }
+        }
     }
 
     fun cambiarTemp(valor: Double) {

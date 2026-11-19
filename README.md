@@ -4,6 +4,8 @@ App Android para monitorear y controlar el riego desde el teléfono. Es la Unida
 
 **Estudiantes:** Jenniffer Gonzalez y Rodrigo Cutiño · Proyecto de la Unidad 1: [ProyectRiego](https://github.com/rodrigocutinoa/ProyectRiego)
 
+> **Estado de la entrega:** Hitos 0 a 8 listos, pruebas P1–P14: 14 de 14. Resumen para el profesor en [ENTREGA.md](ENTREGA.md).
+
 Una sola app con dos roles. El **Nodo de riego** simula el sensor de humedad del suelo, el de temperatura y la bomba. El **Panel** muestra el estado en vivo y controla la bomba. Se comunican por **Wi-Fi con MQTT**, y el lado IoT (broker, canal Wi-Fi y fallas) se simula con [hertzbench](https://github.com/Rixmerz/hertzbench), conectado a Claude Code por MCP.
 
 | Panel (operador) | Notificación de enlace | Nodo en modo seguro | Historial |
